@@ -56,7 +56,7 @@ var threeSum2 = function(nums) {
 
 var threeSum = function(nums) {
     // sort the numbers so they are in order from smallest to largest
-    nums = nums.sort((a, b) => a - b);
+    // nums = nums.sort((a, b) => a - b);  // sorting is neccessary if you want to make sure not to duplicate array entries
     // create an array to hold results
     let result = [];
 

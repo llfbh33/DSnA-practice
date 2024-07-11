@@ -1,0 +1,67 @@
+// Given an integer array nums of length n and an integer target, find three integers in nums such that the sum is closest to target.
+
+// Return the sum of the three integers.
+
+// You may assume that each input would have exactly one solution.
+
+
+
+// Example 1:
+
+// Input: nums = [-1,2,1,-4], target = 1
+// Output: 2
+// Explanation: The sum that is closest to the target is 2. (-1 + 2 + 1 = 2).
+// Example 2:
+
+// Input: nums = [0,0,0], target = 1
+// Output: 0
+// Explanation: The sum that is closest to the target is 0. (0 + 0 + 0 = 0).
+
+
+// Constraints:
+
+// 3 <= nums.length <= 500
+// -1000 <= nums[i] <= 1000
+// -104 <= target <= 104
+
+const helper = (one, two, three, target) => {
+    let sum = (one + two + three) - target;
+    if (sum < 0) sum *= -1;
+    return sum;
+}
+
+// I would assume that the best way to keep track would be to hold the first itteration of 3, if a new value is found, then start on the next
+var threeSumClosest = function(nums, target) {
+    let result = []
+    nums = nums.sort((a, b) => a - b);
+    for (let i = 0; i < nums.length - 2; i++) { // We want to start checking the first number at index zero, and stop index zero from checking the same numbers, meaning the last tw
+        if (i > 0 && nums[i] === nums[i + 1]) {
+            continue;
+        }
+
+        let j = i + 1;   // we want to keep an eye on the second number that will be added which will be the one right after the first
+        let k = nums.length - 1   // set k to the last indice of nums, this way we can work from both sides of the array to the middle
+        while(j < k) {    // want to make sure that j and k do not overlap each other so we are not counting the same numbers
+
+            if (nums[i] + nums[j] + nums[k] === target) return target;  // we can assume that if we hit the target that that is the answer as it is the closest sum
+            if (!result.length) {
+                result = [nums[i], nums[j], nums[k]];
+            } else {
+                let gaugeNums = helper(nums[i], nums[j], nums[k], target);
+                let gaugeResult = helper(result[0], result[1], result[2], target);
+                if (gaugeNums < gaugeResult) result = [nums[i], nums[j], nums[k]];
+            }
+            while(j < k && nums[j] === nums[j + 1]) j++;
+            while(j < k && nums[k] === nums[k - 1]) k--;
+            j++;
+            k--;
+
+        }
+    }
+    return result.reduce((partialSum, a) => partialSum + a, 0);
+
+};
+
+
+const test = [-1,2,1,-4]
+console.log(threeSumClosest(test, 1))
