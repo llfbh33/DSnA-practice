@@ -52,7 +52,8 @@ const longestCommonPrefix = (strs) => {
     return first;
 };
 
-
+// While this function only uses one loop it does still use a built in method which takes O(n) for worst case time complexity
+// So this function still has a worst case time complexity of O(n * m) just like the above function.
 const longestCommonPrefix2 = (strs) => {
     let result = '';
     let min = Math.min(...strs.map(str => str.length)); // here we are finding the length of the shortest string as a way to reduce the amount of comparisons made - similar to what I did with setting the length to first
