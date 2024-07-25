@@ -6,7 +6,7 @@ let nums = [1, 1, 1, 2, 2, 2, 3, 3, 4]
 const topkFrequent = (nums, k) => {
 	let buckets = new Array(nums.length);               // (space O(n))
 	let counts = {};                                    // (space O(n))
-	let res = [];                                       // (space O(n))
+	let res = [];                                       // (space O(k))
 	for (let i = 0; i < nums.length; i++) {
 		let num = nums[i];
 		counts[num] ? counts[num] += 1 : counts[num] = 1
