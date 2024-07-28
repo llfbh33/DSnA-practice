@@ -39,7 +39,7 @@ class ListNode {
 
 var mergeTwoLists = function(list1, list2) {
     let result = new ListNode();
-    let current = result;
+    let current = result;           // we make a pointer for each list because we want to keep track of the heads
 
     let p1 = list1;
     let p2 = list2;
@@ -70,9 +70,14 @@ var mergeTwoLists = function(list1, list2) {
 // the above function and test runs and passes in leetcode however it does not properly work within VS code because I am not properly working the code
 
 
-const list1 = new ListNode(1, new ListNode(2, new ListNode(4)));
-const list2 = new ListNode(1, new ListNode(3, new ListNode(4)));
-const mergedList = mergeTwoLists(list1, list2);
+const list1 = new ListNode(1)
+list1.next = new ListNode(2);
+list1.next.next = new ListNode(4);
+const list2 = new ListNode(1);
+list2.next =  new ListNode(3);
+list2.next.next = new ListNode(4);
+console.log(mergeTwoLists(list1, list2));
+
 
 
 function printList(node) {
@@ -83,4 +88,4 @@ function printList(node) {
     }
   }
 
-  printList(mergedList);
+//   printList(mergedList);
