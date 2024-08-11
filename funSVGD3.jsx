@@ -1,6 +1,7 @@
 
 const fun = () => {
 
+
     return (
         <div>
             <svg xmlns="http://www.w3.org/2000/svg"               // if we set the transform on the svg that holds the elements the x and y stand for where to go
@@ -36,7 +37,26 @@ const fun = () => {
 
                 <use href="#heart" fill="none" stroke="red" />
             </svg>
+
+
         </div>
     )
 
 }
+
+
+
+
+
+
+    // // Draw bars
+    // svg.selectAll(".bar")                                   // select all with the class of bar, currently there are no elements like that however, necessary to make sure we add the following attributes to the rectangles we create - uses to figure out how many elements to create
+    //   .data(data)                                           // we use the data method to bind our data array to the 'empty' selection - the binding creats a place holder for each data element and is added to this section
+    //   .enter()                                              // Identifies data points which don't yet have coresponding elements (the data we just bound) within the DOM - creates placeholers in the DOM for them
+    //   .append("rect")                                       // Appends a rectangle for each placeholder element created with the .enter() method
+    //   .attr("class", "bar")                                 // provides each of these rectangles with a class of bar
+    //   .attr("x", marginLeft)                               // Sets where the rectangles start on the x axis - we want them to start at 0 in this case (if we were showing 2 months overlapping each other of sales we would want the x start of the greatest sales month to be the frequency of the least sales month ) - maybe?
+    //   .attr("y", d => yScale(d[settings.y[0].key]))                     // determins the vertical position of the top of each bar. returns the y coordinate for each bar, based on its name which was specified in the yScale function
+    //   .attr("width", d => xScale(d[settings.x[0].key]))              // Sets the width of each bar depending on the data received and computed per data entry with the xScale function above
+    //   .attr("height", yScale.bandwidth())                   // determins the height of each bar - .bandwidth() is a method provided by scaleBand()  which returns the width of each band in the scale including the padding provided above
+    //   .attr("fill", "teal");                                // sets the color of all of the rectangles with a class of bar
