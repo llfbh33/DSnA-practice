@@ -63,11 +63,32 @@
 
 
 
-
 const addTwoNumbers = (l1, l2) => {
-    
+    let prevNum = 0;
+    let list = new ListNode();
+    let listCurr = list;
 
-}
+    while (l1 !== null || l2 !== null || prevNum > 0) {
+        // Get the values from the current nodes, or 0 if the node is null
+        const val1 = l1 ? l1.val : 0;
+        const val2 = l2 ? l2.val : 0;
+
+        // Calculate the sum for this position
+        let sum = val1 + val2 + prevNum;
+        prevNum = Math.floor(sum / 10); // Carry over for the next iteration
+        sum = sum % 10; // The value to store at this node
+
+        // Set the current node value
+        listCurr.next = new ListNode(sum);
+        listCurr = listCurr.next;
+
+        // Move to the next nodes in the lists (if any)
+        if (l1) l1 = l1.next;
+        if (l2) l2 = l2.next;
+    }
+
+    return list.next; // Return the next node after the dummy head
+};
 
 
 
