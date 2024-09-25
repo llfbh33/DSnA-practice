@@ -76,6 +76,7 @@ const numIslands = (grid) => {
             // if the node is equal to 1 we found a new island
             if (grid[i][k] === '1') {
                 // increase the count
+                console.log([i, k])
                 countIslands++;
                 // and send the coordinates to the helper function to remove all elements of that island
                 helperFunc(i, k, grid)
