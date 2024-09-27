@@ -52,6 +52,8 @@ let grid = [
     [2,1,1]
 ];
 
+
+// this solution does not quite work with different outputs
 const rotted = (grid) => {
     const rotting = [];
 
@@ -62,6 +64,19 @@ const rotted = (grid) => {
             if (grid[i][j] === 2) {
                 rotting.push([i, j])
             }
+            if (grid[i][j] === 1) {
+                let count = 0;
+                const direction = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+
+                for (let corrdinate of direction) {
+                    let row = i + corrdinate[0];
+                    let col = j + corrdinate[1];
+
+                    if (row < 0 || row >= grid.length || col < 0 || col >= grid[0].length) count++
+                    else if (grid[row][col] !== 2 && grid[row][col] !== 1) count++
+                }
+                if (count === 4) return -1;
+            }
         }
     }
     return rotting
@@ -71,6 +86,7 @@ const rotted = (grid) => {
 const orangesRotting = (grid) => {
     let time = 0;
     const rotting = rotted(grid);
+    if (rotting === -1 || rotting.length === 0) return rotting;
     let rot = true;
 
     const direction = [[1, 0], [-1, 0], [0, 1], [0, -1]] // down, up, right, left
@@ -106,4 +122,48 @@ let grid2 = [
     [1,0,1]
 ]
 
-console.log(orangesRotting(grid2))
+console.log(orangesRotting(grid))
+
+
+// help with chatGPT
+
+
+const orangeGrid = (grid) => {
+    const directions = [[1, 0], [-1, 0], [0, 1], [0, -1]] // down, up, right, left
+    const queue = [];
+    let freshOranges = 0;                           // track fresh oranges so that if there are any left you can return -1
+    let minutes = 0;
+
+    for (let i = 0; i < grid.length; i++) {
+        for (let j = 0; j < grid[0].length; j++) {
+            if (grid[i][j] === 2) {
+                queue.push([i, j]);             // save coordinates for all rotting oranges
+            }
+            if (grid[i][j] === 1) {
+                freshOranges++;                 // keep a count of all fresh oranges
+            }
+        }
+    }
+
+    while (queue.length > 0 && freshOranges > 0) {      // while there are rotting coordinates in the queue and there are sill fresh oranges continue
+        const size = queue.length;                      // track the size of the queue to keep time count
+
+        for (let i = 0; i < size; i++) {
+            const [x, y] = queue.shift();               // remove each coordinate so you don't check on rotting fruit again
+
+            for (const [dx, dy] of directions) {
+                const row = x + dx;
+                const col = y + dy;
+
+                // check that the coordinates are within bounds and that the current location has a fresh fruit
+                if (row >= 0 && row < grid.length && col >= 0 && col < grid[0].length && grid[row][col] === 1) {
+                    grid[row][col] = 2;
+                    queue.push([row, col]);
+                    freshOranges--;
+                }
+            }
+        }
+        minutes++;
+    }
+    return freshOranges === 0 ? minutes : -1            // if we found all the fresh oranges return the minutes, else return -1
+}
