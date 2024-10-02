@@ -41,5 +41,11 @@ Practice for Data and Algorithms
     - 102 - Binary Tree Level Order Traversal
         - 10/1/24
 
+        - 107 - Binary Tree Level Order Traversal II
+            - 10/1/24
+
+        - 637 - Average of Levels in Binary Tree
+            - 10/1/24
+
     - 994 - Rotting Oranges
         - 10/1/24
