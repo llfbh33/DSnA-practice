@@ -131,4 +131,10 @@ let grid = [
   ["0","0","0","1","1"]
 ]
 
-console.log(numIslands(grid))
+let grid2 = [
+    ["1","1","1"],
+    ["0","1","0"],
+    ["1","1","1"]
+]
+
+console.log(numIslands(grid2))
