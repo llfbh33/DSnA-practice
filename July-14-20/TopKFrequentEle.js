@@ -3,7 +3,9 @@
 let cat = ["eat","tea","tan","ate","nat","bat"];
 let nums = [1, 1, 1, 2, 2, 2, 3, 3, 4]
 
-const topkFrequent = (nums, k) => {
+const
+
+Frequent = (nums, k) => {
 	let buckets = new Array(nums.length);               // (space O(n))
 	let counts = {};                                    // (space O(n))
 	let res = [];                                       // (space O(k))
