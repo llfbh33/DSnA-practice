@@ -1,0 +1,311 @@
+import React, { useEffect, useRef, useState } from 'react';
+import * as d3 from 'd3';
+import { Paper } from "@mui/material";
+import { scale, dateTimeOutput, pickColors, getDataSets, groupChartData } from '../Utils';
+
+
+const calculateMaxDomain = (data, keys) => {
+
+}
+
+const HorizontalBar = ({
+  records,
+  settings,
+  schema,
+  marginTop = 90,
+  marginRight = 60,
+  marginBottom = 40,
+  marginLeft = 400
+}) => {
+
+  const width = 1500;
+  const height = 800;
+  const fontSize = 35;
+
+  const datetimeFields = Object.keys(schema.properties).map((field) => {
+    if(schema.properties[field].format === 'date-time'){
+      return field;
+    }
+  }).filter((field) => field !== undefined);
+
+  // Prepare data
+  let data = records.map((record) => {
+    const result = {};
+    settings.x.forEach((xfield) => {
+      const key = xfield.key;
+      if(datetimeFields.includes(key)) {
+        result[key] = new Date(record[xfield.key]);
+      } else {
+        result[key] = record[xfield.key];
+      }
+    });
+    settings.y.forEach((yfield) => {
+      const key = yfield.key;
+      if(datetimeFields.includes(key)) {
+        result[key] = new Date(record[yfield.key]);
+      } else {
+        result[key] = record[yfield.key];
+      }
+    });
+    return result;
+  });
+
+  let color;
+  if (settings.x.length === 0 || settings.y.length === 0) {
+    return <div> Please select x and y fields </div>;
+  }
+
+  data.sort((a, b) => a[settings.y[0].key] - b[settings.y[0].key]);
+
+  if (settings.yAxisType !== "auto") {    // if not auto, filter side with one element to only include info between min and max
+    data = data.filter(record =>(         // only necessary for bar charts or pie charts - all data necesary for line and area charts
+      record[settings.y[0].key] >= settings.yMin && record[settings.y[0].key] <= settings.yMax
+    ))
+  }
+
+  // if (settings.aggregate === 'Count') {
+  //   console.log('data', data)
+  //   data = groupChartData(data, settings, schema)
+  //   console.log('data two', data, settings)
+  // }
+
+  const svgRef = useRef();
+
+  useEffect(() => {
+      //create the svg reference
+      const svg = d3.select(svgRef.current);
+      svg.selectAll("*").remove();
+      const keys = settings.x.map(setting => setting.key);
+      const color = pickColors(data, settings.colorWheel);
+
+      // Create scales
+
+      const xScale = scale(settings.xAxisType, schema, settings.x[0].key)
+      if (typeof xScale.bandwidth === "function") {
+        const xValues = Array.from(new Set(
+          data.flatMap(d => settings.x.map(xSetting => d[xSetting.key]))
+        ));
+
+        xScale.domain(xValues)
+        .range([height - marginBottom, marginTop]);
+      } else if (settings.xAxisType === "auto") {
+        xScale.domain([0, d3.max(data, d => Math.max(...keys.map(key => d[key])))])
+      } else {
+        xScale.domain([
+          settings.xMin || 0,
+          settings.xMax || d3.max(data, d => Math.max(...keys.map(key => d[key])))
+        ])
+      }
+      xScale.range(settings.xAxisInvert ? [width - marginLeft, marginRight] : [marginLeft, width - marginRight ]);
+
+
+      const yScale = d3.scaleBand()
+        .domain(
+            d3.sort(data, (a, b) => a[settings.y[0].key] - b[settings.y[0].key])
+            .map(d => d[settings.y[0].key])
+        )
+        .rangeRound(settings.yAxisInvert ? [height - marginBottom - marginTop, marginTop] : [marginTop, height - marginBottom - marginTop])
+        .padding(0.1);
+
+      // style the svg container
+      svg
+        .attr("width", width)
+        .attr("height", height)
+        .attr("viewBox", [0, 0, width, height])
+        .attr("style", "max-width: 100%; height: auto; font: 10px sans-serif;")
+
+      // add container to hold bars
+      const groups = svg.selectAll("g.record")
+        .data(data)
+        .enter()
+        .append("g")
+        .attr("class", "record")
+        .attr("transform", d => `translate(0,${yScale(d[settings.y[0].key])})`);
+
+      // add rectangles for bar, changing color by key value
+      groups.selectAll("rect")
+        .data(d => settings.x.map((xSetting, i) => ({ key: xSetting.key, value: d[xSetting.key]})))
+        .enter()
+        .append("rect")
+        .attr("x", d => settings.xAxisType === "auto" && settings.xAxisInvert
+          ? xScale(d.value)
+          : settings.xAxisInvert
+          ? xScale(d.value)
+          : settings.xAxisType !== "auto"
+          ? xScale(settings.xMin) || xScale(0)
+          : xScale(0))
+        .attr("y", (d, i) => i * (yScale.bandwidth() / settings.x.length))
+        .attr("width", d => {
+          let calculatedWidth;
+
+          if (typeof xScale.bandwidth === "function") {
+            calculatedWidth = xScale.bandwidth();
+          } else { calculatedWidth = settings.xAxisType === "auto" && settings.xAxisInvert
+            ? xScale(0) - xScale(d.value)
+            : settings.xAxisInvert
+            ? xScale(settings.xMin) - xScale(d.value)
+            : settings.xAxisType !== "auto"
+            ? xScale(d.value - settings.xMin) - xScale(0) || xScale(d.value) - xScale(0)
+            : xScale(d.value) - xScale(0);
+          }
+          return Math.max(0, calculatedWidth);  // Use Math.max to ensure width is not negative
+        })
+        .attr("height", yScale.bandwidth() / settings.x.length)
+        .attr("fill", d => color(d.key))
+
+
+      // included values with each bar, necessary for ledgend, adjust values for each chart typ
+      if (settings.barValues) {
+        let formatTime;
+        if (settings.xAxisType === "time" || schema.properties[settings.x[0].key].format === 'date-time') {
+            formatTime = d3.timeFormat(dateTimeOutput(schema.properties[settings.x[0].key].display))
+        }
+        const threshold = 100; // Minimum width for displaying text inside the bar
+        groups.selectAll("text")
+          .data(d => settings.x.map((xSetting, i) => ({ key: xSetting.key, value: d[xSetting.key] })))
+          .enter()
+          .append("text")
+          .attr("x", d => {
+            if (settings.xAxisInvert) {
+              return xScale(d.value) + marginRight + 60; // Right side for inverted axis
+            } else {
+              return xScale(d.value) - marginRight; // Left side for normal axis
+            }
+          })
+          .attr("y", (d, i) => i * (yScale.bandwidth() / settings.x.length) + (yScale.bandwidth() / settings.x.length) / 2)
+          .attr("dy", ".35em") // Center text vertically
+          .attr("fill", "white")
+          .attr("font-size", `${fontSize}`)
+          .attr("text-anchor", "end") // Align text to the end (right side)
+          .text(d => (formatTime ? formatTime(d.value) : d.value)) // Display the value inside the rectangle
+          .call((text) => {
+            text.each(function (d) {
+              const barWidth = settings.xAxisInvert
+                ? width - marginLeft - xScale(d.value) - threshold
+                : xScale(d.value) - threshold - xScale(settings.xAxisType === "auto"
+                  ? 0
+                  : settings.xMin);
+              const smallBar = barWidth < threshold;
+
+              if (smallBar) {
+                // If the bar is too small, position text outside and in black
+                d3.select(this)
+                  .attr("dx", settings.xAxisInvert ? -200 : threshold) // Adjust dx based on bar direction
+                  .attr("fill", "black")
+                  .attr("text-anchor", settings.xAxisInvert ? "end" : "start"); // Align appropriately
+              } else {
+                // Reset to default if bar is wide enough
+                d3.select(this)
+                  .attr("dx", settings.xAxisInvert ? marginRight : 0)
+                  .attr("fill", "white")
+                  .attr("text-anchor", "end"); // Center text inside bar
+              }
+
+              // Ensure text stays within chart bounds if bar is out of view
+              if (!settings.xAxisInvert && (xScale(d.value) < marginLeft || xScale(d.value) > width - marginRight)) {
+                d3.select(this)
+                  .attr("x", marginLeft) // Position at the start of the chart
+                  .attr("dx", 20) // No offset
+                  .attr("text-anchor", "start");
+              } else if (settings.xAxisInvert && (xScale(d.value) > width - marginLeft || xScale(d.value) < marginLeft)) {
+                d3.select(this)
+                  .attr("x", width - marginLeft - 20) // Position at the end of the chart
+                  .attr("dx", 0) // No offset
+                  .attr("text-anchor", "end");
+              }
+            });
+          });
+      }
+
+      if (settings.labels) {
+        svg.append("text")
+          .attr("class", "x label")
+          .attr("text-anchor", "middle")
+          .attr("x", (width / 2))
+          .attr("y", height - 5)
+          .attr("font-size", `${fontSize}`)
+          .attr("font-weight", "600")
+          .text(settings.xLabel);
+
+        svg.append("text")
+          .attr("class", "y label")
+          .attr("text-anchor", "middle")
+          .attr("x", (marginBottom + 8))
+          .attr("y", (height / 2) + 50)
+          .attr("transform", `rotate(-90, 12, ${height / 2})`)
+          .attr("font-size", `${fontSize}`)
+          .attr("font-weight", "600")
+          .text(settings.yLabel);
+
+        svg.append("text")
+          .attr("class", "title")
+          .attr("text-anchor", "middle")
+          .attr("x", (width / 2))
+          .attr("y", (marginTop / 1.5))
+          .attr("font-size", `${fontSize}`)
+          .attr("font-weight", "600")
+          .text(settings.title);
+      }
+
+      // Add x-axis
+      let xAxisTicks = svg.append("g");
+      if (settings.xAxisType === "time" || schema.properties[settings.x[0].key].format === 'date-time') {
+        xAxisTicks
+          .attr("transform", `translate(0,${height - marginBottom - marginTop})`)
+          .call(d3.axisBottom(xScale)
+              .ticks(width / 200)
+              .tickFormat(settings.xAxisType === "time" || schema.properties[settings.x[0].key].format === 'date-time'
+                  ? d3.timeFormat(dateTimeOutput(schema.properties[settings.x[0].key].display))
+                  : null)
+              .tickSizeOuter(0)
+          ).attr("font-size", `${fontSize}`);
+      } else {
+        xAxisTicks
+          .attr("transform", `translate(0,${height - marginBottom - marginTop})`)
+          .call(d3.axisBottom(xScale)
+          .ticks(width / 180))
+          .attr("font-size", `${fontSize}`);
+      }
+
+      if (settings.linesV) {
+        xAxisTicks.call(g => g.selectAll(".tick line").clone()
+        .attr("y2", - (height - marginTop - marginBottom - marginTop))
+        .attr("stroke-opacity", 0.4))
+      }
+
+      // Add y-axis
+      let yAxisTicks = svg.append("g");
+      if (settings.xAxisInvert) {
+        yAxisTicks
+          .attr("transform", `translate(${width - marginLeft},0)`)
+          .call(d3.axisRight(yScale)
+          .ticks(settings.yAxisType === "linear" ? width / 80 : width / 200)
+          .tickFormat(settings.yAxisType === "time" || schema.properties[settings.y[0].key].format === 'date-time'
+              ? d3.timeFormat(dateTimeOutput(schema.properties[settings.y[0].key].display))
+              : null))
+          .attr("font-size", `${fontSize}`)
+      } else {
+        yAxisTicks
+          .attr("transform", `translate(${marginLeft} ,0)`)
+          .call(d3.axisLeft(yScale)
+          .ticks(settings.yAxisType === "linear" ? width / 80 : width / 200)
+          .tickFormat(settings.yAxisType === "time" || schema.properties[settings.y[0].key].format === 'date-time'
+              ? d3.timeFormat(dateTimeOutput(schema.properties[settings.y[0].key].display))
+              : null))
+          .attr("font-size", `${fontSize}`)
+      }
+
+      if (settings.linesH) {
+        yAxisTicks.call(g => g.selectAll(".tick line").clone()
+            .attr("x2", settings.xAxisInvert ? -(width - marginLeft - marginRight) : width - marginLeft - marginRight)
+            .attr("stroke-opacity", 0.4))
+      }
+
+  }, [data, settings]);
+
+  return (
+      <svg ref={svgRef}></svg>
+  );
+};
+
+export default HorizontalBar;
