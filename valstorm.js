@@ -30,6 +30,14 @@ export const groupChartData = (data, settings, schema) => {
                     countData[groupValue] ? countData[groupValue] += 1 : countData[groupValue] = 1;
                 }
             }
+            if (settings.aggregate === 'Min') {
+                groupObj[xKey] = groupObj[xKey] ? Math.min(groupObj[xKey], record[xKey]) : record[xKey];
+            }
+            if (settings.aggregate === 'Max') {
+                groupObj[xKey] = groupObj[xKey] ? Math.max(groupObj[xKey], record[xKey]) : record[xKey];
+            }
+
+            console.log('help')
         });
 
         if (!groupedData[groupValue]) {
