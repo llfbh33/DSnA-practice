@@ -107,3 +107,93 @@ export const groupChartData = (data, settings, schema) => {
 // length
 // :
 // 10
+
+
+
+
+
+
+import os
+import json
+from dotenv import load_dotenv
+from pymongo import MongoClient
+
+load_dotenv()
+
+ENV = os.getenv("ENV")
+ORG_ID = os.getenv("ORG_ID")
+VALSTORM_API_KEY = os.getenv("VALSTORM_API_KEY")
+SLACK_TOKEN = os.getenv('SLACK_TOKEN')
+MONGO_USER = os.getenv('MONGO_USER')
+MONGO_PORT = os.getenv('MONGO_PORT')
+MONGO_HOST_PROD = os.getenv('MONGO_HOST_PROD')
+MONGO_PASSWORD_PROD = os.getenv('MONGO_PASSWORD_PROD')
+
+MONGODB_URI_PROD = f"mongodb+srv://{MONGO_USER}:{MONGO_PASSWORD_PROD}@{MONGO_HOST_PROD}/?authSource=admin"
+prod_client = MongoClient(MONGODB_URI_PROD)
+
+
+
+prod_databases = prod_client.list_database_names()
+prod_databases
+
+interested_dbs = []
+exclude = ['admin', 'config', 'local']
+for db in prod_databases:
+    if db not in exclude:
+        interested_dbs.append(db)
+
+interested_dbs
+
+
+
+
+# Define the output directory for JSON files
+output_dir = os.path.join("dev-xp", "exported_data")
+os.makedirs(output_dir, exist_ok=True)
+
+# Loop through each database in production
+for db_name in interested_dbs:
+    if db_name == 'b1049643-b61e-48b4-8df0-8de50c96446b':
+        continue
+
+    print(f"Copying database: {db_name}")
+
+    # Access the database from production and development
+    prod_db = prod_client[db_name]
+    # dev_db = dev_client[db_name]
+
+    # Get the list of collections in the production database
+    prod_collections = prod_db.list_collection_names()
+
+    # Loop through each collection in the production database
+    for collection_name in prod_collections:
+        if collection_name in skip or collection_name.startswith('salesforce') or collection_name.startswith('market data'):
+            continue
+        print(f"  Copying collection: {collection_name}")
+
+        # Access the production and development collections
+        prod_collection = prod_db[collection_name]
+        # dev_collection = dev_db[collection_name]
+
+        # Drop the collection in the development database before copying (optional)
+        # dev_collection.drop()
+
+        # Copy all documents from production to development
+        documents = list(prod_collection.find())
+
+        # Convert ObjectId to string for JSON serialization
+        for doc in documents:
+            if "_id" in doc:
+                doc["_id"] = str(doc["_id"])
+
+        # Define the output file path
+        output_file = os.path.join(output_dir, f"{db_name}_{collection_name}.json")    
+
+
+        # if len(documents) > 0:
+        #     dev_collection.insert_many(documents) # this code should change to create a file and add JSON data
+
+        print(f"  Copied {prod_collection.count_documents({})} documents")
+
+print("Data copy complete!")
