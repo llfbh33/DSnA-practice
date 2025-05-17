@@ -55,3 +55,4 @@ console.log(reverse(1534236469)); // Output: 0 (overflow case)
 
 // new file
 // I completed quite a few pushes this week however they will not register untill after monday
+// Because the git commits are checked on sunday It will be counted as if I have 0 commits for the week
