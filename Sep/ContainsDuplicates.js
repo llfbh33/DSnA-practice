@@ -21,6 +21,10 @@
 // does not necessarially need to add all the numbers from the array or even look at them all.
 
 
+// for both:
+// Time complexity: Object(n)
+// Space complexity: Object(n)
+
 
 function hasDuplicate(nums) {
     const nonDuplicates = new Set();
